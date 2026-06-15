@@ -10,7 +10,12 @@ class BagDetail extends Model
         'bag_id',
         'barcode',
         'asset',
-        'condition_note'
+        'condition_note',
+        'is_return'
+    ];
+
+    protected $casts = [
+        'is_return' => 'boolean'
     ];
 
     public function bag()

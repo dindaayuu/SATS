@@ -296,12 +296,10 @@
 }
 
 .modal-actions{
-  display: flex;
-  justify-content: flex-end;
-
-  gap: 12px;
-
-  margin-top: 24px;
+  display:flex;
+  justify-content:flex-end;
+  gap:12px;
+  margin-top:24px;
 }
 
 .cancel-btn,
@@ -931,4 +929,22 @@
 
 .asset-note-input:focus {
   border-color: #d4a452;
+}
+
+.modal-actions .cancel-btn,
+.modal-actions .save-btn{
+  width: 110px;
+  height: 48px;
+}
+
+.modal-actions .cancel-btn,
+.modal-actions .save-btn{
+  width: 120px !important;
+  height: 48px !important;
+
+  padding: 0 !important;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }

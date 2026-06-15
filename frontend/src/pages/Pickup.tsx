@@ -91,23 +91,6 @@ export default function Pickup() {
     | DOUBLE SCAN
     |--------------------------------------------------------------------------
     */
-
-    const alreadyExist = bags.find(
-      (bag) => bag.barcode === barcode
-    );
-
-    if (alreadyExist) {
-
-      showToast(
-        "warning",
-        "Tas sudah discan sebelumnya"
-      );
-
-      setBarcode("");
-
-      return;
-    }
-
     try {
 
       const response = await fetch(
@@ -150,6 +133,22 @@ export default function Pickup() {
       */
 
       const bag = data.bag;
+
+      const alreadyExist = bags.find(
+        (item) => item.id === bag.id
+      );
+      
+      if (alreadyExist) {
+      
+        showToast(
+          "warning",
+          "Tas sudah ada di daftar"
+        );
+      
+        setBarcode("");
+      
+        return;
+      }
 
       const newBag: BagItem = {
 
@@ -620,7 +619,7 @@ export default function Pickup() {
                 "Periksa kembali data yang discan"}
 
               {toast.type === "error" &&
-                "Barcode tidak terdaftar dalam sistem"}
+                "Tidak terdaftar dalam sistem"}
 
             </p>
 

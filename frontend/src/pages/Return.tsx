@@ -93,11 +93,11 @@ export default function Return() {
      ALERT
   ========================= */
 
-  const [showAlert, setShowAlert] =
-    useState(false);
-
-  const [alertMessage, setAlertMessage] =
-    useState("");
+  const [toast, setToast] = useState({
+    show: false,
+    type: "",
+    message: "",
+  });
 
   /* =========================
      AUTO FOCUS
@@ -113,20 +113,27 @@ export default function Return() {
      ALERT FUNCTION
   ========================= */
 
-  const openAlert = (
-    message: string
-  ) => {
+const showToast = (
+  type: string,
+  message: string
+) => {
 
-    setAlertMessage(message);
+  setToast({
+    show: true,
+    type,
+    message,
+  });
 
-    setShowAlert(true);
+  setTimeout(() => {
 
-    setTimeout(() => {
+    setToast({
+      show: false,
+      type: "",
+      message: "",
+    });
 
-      setShowAlert(false);
-
-    }, 2000);
-  };
+  }, 2200);
+};
 
   /* =========================
      CURRENT BAG
@@ -160,7 +167,8 @@ export default function Return() {
 
       if (alreadyExist) {
 
-        openAlert(
+        showToast(
+          "warning",
           "Tas sudah discan"
         );
 
@@ -182,10 +190,10 @@ export default function Return() {
 
         if (!res.data.success) {
 
-          openAlert(
+          showToast(
+            "error",
             res.data.message
           );
-
           return;
         }
 
@@ -197,7 +205,8 @@ export default function Return() {
           "available"
         ) {
 
-          openAlert(
+          showToast(
+            "warning",
             "Tas sudah dikembalikan"
           );
 
@@ -251,7 +260,8 @@ export default function Return() {
 
         console.log(err);
 
-        openAlert(
+        showToast(
+          "error",
           "Server error"
         );
       }
@@ -261,8 +271,7 @@ export default function Return() {
      SCAN ITEM
   ========================= */
 
-  const handleScanItem =
-    () => {
+  const handleScanItem = async () => {
 
       if (!currentBag)
         return;
@@ -295,11 +304,32 @@ const found =
       
         if (!found) {
 
-          openAlert(
+          showToast(
+            "error",
             "Asset tidak ditemukan"
           );
         
           setBarcode("");
+        
+          return;
+        }
+
+        try {
+
+          await axios.post(
+            "http://127.0.0.1:8000/api/return/scan-item",
+            {
+              barcode: found.barcode,
+              bag_id: currentBag.id,
+            }
+          );
+        
+        } catch (err) {
+        
+          showToast(
+            "error",
+            "Gagal update device"
+          );
         
           return;
         }
@@ -316,7 +346,8 @@ const found =
         )
       ) {
 
-        openAlert(
+        showToast(
+          "warning",
           "Item sudah discan"
         );
 
@@ -441,8 +472,9 @@ const found =
 
       if (bags.length === 0) {
 
-        openAlert(
-          "Belum ada tas"
+       showToast(
+          "error",
+          "Belum ada tas dipilih"
         );
 
         return;
@@ -472,9 +504,10 @@ const found =
         !employeeName.trim()
     ) {
 
-        openAlert(
-          "Nama pengembali wajib diisi"
-        );
+      showToast(
+        "error",
+        "Nama pengembali wajib diisi"
+      );
 
         return;
       }
@@ -504,7 +537,8 @@ const found =
 
         setShowModal(false);
 
-        openAlert(
+        showToast(
+          "success",
           "Pengembalian berhasil"
         );
 
@@ -518,7 +552,8 @@ const found =
 
         console.log(err);
 
-        openAlert(
+        showToast(
+          "error",
           "Gagal return"
         );
       }
@@ -564,11 +599,11 @@ const found =
 
         if (currentBag) {
 
-          handleScanItem();
-
+          await handleScanItem();
+        
         } else {
-
-          handleAddBag();
+        
+          await handleAddBag();
         }
 
       } finally {
@@ -590,14 +625,40 @@ const found =
 
       {/* ALERT */}
 
-      {showAlert && (
+      {toast.show && (
 
-        <div className="custom-alert">
+<div className={`center-alert alert-${toast.type}`}>
 
-          {alertMessage}
+  <div className="center-alert-icon">
 
-        </div>
-      )}
+    {toast.type === "success" && "✓"}
+
+    {toast.type === "warning" && "!"}
+
+    {toast.type === "error" && "✕"}
+
+  </div>
+
+  <h3>
+    {toast.message}
+  </h3>
+
+  <p>
+
+    {toast.type === "success" &&
+      "Data berhasil diproses"}
+
+    {toast.type === "warning" &&
+      "Periksa kembali data yang discan"}
+
+    {toast.type === "error" &&
+      "Tidak terdaftar dalam sistem"}
+
+  </p>
+
+</div>
+
+)}
 
       {/* MODAL */}
 
@@ -638,7 +699,7 @@ const found =
               </button>
 
               <button
-                className="add-btn orange-btn"
+                className="save-btn orange-btn"
                 onClick={handleSaveReturn}
               >
                 Simpan
