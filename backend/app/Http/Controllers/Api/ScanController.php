@@ -11,8 +11,18 @@ use App\Models\BagDetail;
 use App\Models\Activity;
 use App\Models\BagLog;
 
+use App\Services\AssetApiService;
+
 class ScanController extends Controller
 {
+
+    protected $assetApi;
+
+        public function __construct(
+            AssetApiService $assetApi
+        ) {
+            $this->assetApi = $assetApi;
+        }
 
     /*
     |--------------------------------------------------------------------------
@@ -434,6 +444,7 @@ class ScanController extends Controller
             'details' => $details
         ]);
     }
+    
 
     /*
     |--------------------------------------------------------------------------
@@ -453,5 +464,16 @@ class ScanController extends Controller
         } catch (\Exception $e) {
             \Log::error('WA Error : ' . $e->getMessage());
         }
+    }
+
+    public function testAsset($code)
+    {
+        $response =
+            $this->assetApi->getBag($code);
+
+        return response()->json([
+            'status' => $response->status(),
+            'body' => $response->json(),
+        ]);
     }
 }

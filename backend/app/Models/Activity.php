@@ -11,4 +11,10 @@ class Activity extends Model
         'date',
         'type'
     ];
+    public function bagLogs()
+    {
+        return $this->hasMany(
+            BagLog::class
+        );
+    }
 }
