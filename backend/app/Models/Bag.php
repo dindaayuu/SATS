@@ -23,4 +23,18 @@ class Bag extends Model
     {
         return $this->hasMany(BagLog::class);
     }
-}
+
+    public function checklists()
+    {
+        return $this->hasMany(
+            Checklist::class
+        );
+    }
+
+    public function replacements()
+    {
+        return $this->hasMany(
+            DeviceReplacement::class
+        );
+    }
+    }

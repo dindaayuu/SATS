@@ -13,13 +13,30 @@ class TenantController extends Controller
      * Display a listing of active tenants ordered by route_order.
      */
     public function index()
-    {
-        return response()->json(
-            Tenant::where('is_active', true)
-                ->orderBy('route_order')
-                ->get()
-        );
-    }
+{
+    $tenants = Tenant::where('is_active', true)
+        ->orderBy('route_order')
+        ->get()
+        ->map(function ($tenant) {
+
+            $lastChecklist = DB::table('checklists')
+                ->where('tenant_id', $tenant->id)
+                ->orderByDesc('id')
+                ->first();
+
+            if (!$lastChecklist) {
+                $tenant->status = 'pending';
+            } elseif ($lastChecklist->status === 'PROBLEM') {
+                $tenant->status = 'issue';
+            } else {
+                $tenant->status = 'done';
+            }
+
+            return $tenant;
+        });
+
+    return response()->json($tenants);
+}
 
     /**
      * Display the specified tenant using route model binding.

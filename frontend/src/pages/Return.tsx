@@ -986,7 +986,7 @@ const found =
                                       <input
                                         type="text"
                                         className="asset-note-input"
-                                        placeholder="Contoh: layar retak"
+                                        placeholder="isi ketika terjadi kendala!"
                                         value={
                                           assetNotes[item.barcode] || ""
                                         }

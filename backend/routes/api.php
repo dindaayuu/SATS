@@ -4,6 +4,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ScanController;
 use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\ReportingController;
+use App\Http\Controllers\Api\ChecklistController;
+use App\Http\Controllers\Api\DeviceReplacementController;
+
 
 Route::get('/dashboard', [ScanController::class, 'dashboard']);
 
@@ -69,3 +72,102 @@ Route::prefix('reporting')->group(function () {
     );
 });
 
+/*
+|--------------------------------------------------------------------------
+| MOBILE CHECKLIST
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('checklist')->group(function () {
+
+
+    /*
+    List tenant
+    */
+    Route::get(
+        '/tenants',
+        [
+            ChecklistController::class,
+            'tenants'
+        ]
+    );
+
+
+
+    /*
+    Detail tenant + device
+    */
+    Route::get(
+        '/tenants/{id}',
+        [
+            ChecklistController::class,
+            'detailTenant'
+        ]
+    );
+
+  /*
+    Problem options
+    */
+    Route::get(
+        '/problem-types',
+        [
+            ChecklistController::class,
+            'problemTypes'
+        ]
+    );
+
+    /*
+    Submit checklist
+    */
+    Route::post(
+        '/submit',
+        [
+            ChecklistController::class,
+            'submit'
+        ]
+    );
+
+
+});
+
+Route::post(
+    '/device-replacements',
+    [
+        DeviceReplacementController::class,
+        'replace'
+    ]
+);
+
+Route::prefix('report')->group(function () {
+
+
+    Route::get(
+        '/checklists',
+        [
+            ReportingController::class,
+            'checklistHistory'
+        ]
+    );
+
+
+});
+
+Route::get(
+    '/checklists',
+    [
+        ReportingController::class,
+        'checklistHistory'
+    ]
+);
+Route::get(
+    '/checklist/report',
+    [
+        ChecklistController::class,
+        'report'
+    ]
+);
+
+Route::get(
+    '/checklist/dashboard',
+    [ChecklistController::class,'dashboard']
+);

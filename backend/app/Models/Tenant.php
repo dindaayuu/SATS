@@ -26,11 +26,19 @@ class Tenant extends Model
         'last_position_updated_at' => 'datetime',
     ];
 
-    /**
-     * Get the route key for the model.
-     */
+    /*Get the route key for the model.*/
     public function getRouteKeyName(): string
     {
         return 'code';
     }
+
+     /*Checklist History Tenant*/
+    public function checklists()
+    {
+        return $this->hasMany(
+            Checklist::class
+        );
+    }
 }
+
+   

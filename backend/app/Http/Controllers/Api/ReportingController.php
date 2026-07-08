@@ -6,40 +6,53 @@ use App\Http\Controllers\Controller;
 use App\Models\Activity;
 use App\Models\BagDetail;
 use Illuminate\Http\Request;
+use App\Models\Checklist;
 
 class ReportingController extends Controller
 {
     public function summary()
-    {
-        $pickup = Activity::where(
-            'type',
-            'pickup'
-        )->count();
+{
+    $today = now()->toDateString();
 
-        $return = Activity::where(
-            'type',
-            'return'
-        )->count();
+    $pickup = Activity::where(
+        'type',
+        'pickup'
+    )
+    ->whereDate(
+        'created_at',
+        $today
+    )
+    ->count();
 
-        $activeTenant = Activity::distinct(
-            'employee_name'
-        )->count(
-            'employee_name'
-        );
+    $return = Activity::where(
+        'type',
+        'return'
+    )
+    ->whereDate(
+        'created_at',
+        $today
+    )
+    ->count();
 
-        // Tas yang masih dipinjam tenant
-        $activeBag = max(
-            0,
-            $pickup - $return
-        );
+    $activeTenant = Activity::whereDate(
+            'created_at',
+            $today
+        )
+        ->distinct('employee_name')
+        ->count('employee_name');
 
-        return response()->json([
-            'pickup' => $pickup,
-            'return' => $return,
-            'active_bag' => $activeBag,
-            'active_tenant' => $activeTenant,
-        ]);
-    }
+    $activeBag = max(
+        0,
+        $pickup - $return
+    );
+
+    return response()->json([
+        'pickup' => $pickup,
+        'return' => $return,
+        'active_bag' => $activeBag,
+        'active_tenant' => $activeTenant,
+    ]);
+}
 
     public function activityChart()
     {
@@ -258,7 +271,7 @@ class ReportingController extends Controller
     
         $transactions = $query
             ->latest()
-            ->paginate(10);
+            ->paginate(5);
     
         $transactions
             ->getCollection()
@@ -325,4 +338,38 @@ class ReportingController extends Controller
             $transactions
         );
     }
+
+    public function checklistHistory()
+{
+
+    $data = Checklist::with([
+
+            'tenant',
+
+            'bag',
+
+            'details.problemType',
+
+            'details.replacement'
+
+        ])
+
+        ->latest()
+
+        ->get();
+
+
+
+    return response()->json([
+
+
+        'success' => true,
+
+
+        'data' => $data
+
+
+    ]);
+
+}
 }
