@@ -39,6 +39,13 @@ class Tenant extends Model
             Checklist::class
         );
     }
+
+        public function details()
+    {
+        return $this->hasMany(
+            TenantDetail::class
+        );
+    }
 }
 
    

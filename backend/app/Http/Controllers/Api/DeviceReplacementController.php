@@ -10,219 +10,179 @@ use Illuminate\Support\Facades\DB;
 use App\Models\ChecklistDetail;
 use App\Models\DeviceReplacement;
 
-
 class DeviceReplacementController extends Controller
 {
-
-
     public function replace(Request $request)
     {
-
-
         $request->validate([
 
             'checklist_detail_id'
-                => 'required',
+                =>'required',
 
             'new_asset_code'
-                => 'required',
+                =>'required',
 
             'new_device_name'
-                => 'required',
+                =>'required',
 
             'replaced_by'
-                => 'required',
+                =>'required',
 
         ]);
-
 
 
         DB::beginTransaction();
 
 
+        try{
 
-        try {
 
-
-            /*
-            Ambil data device yang bermasalah
-            dari hasil checklist
-            */
             $detail =
-                ChecklistDetail::with(
-                    'bagDetail'
-                )
+                ChecklistDetail::with([
+                    'bagDetail',
+                    'tenantDetail'
+                ])
                 ->findOrFail(
-                    $request
-                        ->checklist_detail_id
+                    $request->checklist_detail_id
                 );
 
 
+            $oldDevice =
+                $detail->source_type === 'BAG'
+                ? $detail->bagDetail
+                : $detail->tenantDetail;
 
-            $bagDevice =
-                $detail->bagDetail;
 
 
-
-            /*
-            Catat history pergantian
-            */
             $replacement =
                 DeviceReplacement::create([
 
 
-                    'checklist_detail_id'
-                        =>
+                    'checklist_detail_id'=>
                         $detail->id,
 
 
-
-                    'bag_id'
-                        =>
-                        $bagDevice
-                            ->bag_id,
-
+                    'bag_id'=>
+                        $detail->source_type === 'BAG'
+                        ? $oldDevice->bag_id
+                        : null,
 
 
-                    'device_type'
-                        =>
-                        $detail
-                            ->device_name_snapshot,
+                    'device_type'=>
+                        $detail->device_name_snapshot,
 
 
-
-                    'old_asset_code'
-                        =>
-                        $detail
-                            ->asset_code_snapshot,
+                    'old_asset_code'=>
+                        $detail->asset_code_snapshot,
 
 
-
-                    'old_device_name'
-                        =>
-                        $detail
-                            ->device_name_snapshot,
+                    'old_device_name'=>
+                        $detail->device_name_snapshot,
 
 
-
-                    'new_asset_code'
-                        =>
-                        $request
-                            ->new_asset_code,
+                    'new_asset_code'=>
+                        $request->new_asset_code,
 
 
-
-                    'new_device_name'
-                        =>
-                        $request
-                            ->new_device_name,
+                    'new_device_name'=>
+                        $request->new_device_name,
 
 
-
-                    'reason'
-                        =>
-                        $request
-                            ->reason,
+                    'reason'=>
+                        $request->reason,
 
 
-
-                    'replaced_by'
-                        =>
-                        $request
-                            ->replaced_by,
+                    'replaced_by'=>
+                        $request->replaced_by,
 
 
-
-                    'replacement_time'
-                        =>
+                    'replacement_time'=>
                         now(),
 
                 ]);
 
 
 
-
-            /*
-            Update isi tas SATS
-            supaya return membaca device baru
-            */
-            $bagDevice->update([
+            if($oldDevice){
 
 
-                'barcode'
-                    =>
-                    $request
-                        ->new_asset_code,
+                if($detail->source_type === 'BAG'){
+
+                    $oldDevice->update([
+
+                        'barcode'=>
+                            $request->new_asset_code,
 
 
-                'asset'
-                    =>
-                    $request
-                        ->new_device_name,
+                        'asset'=>
+                            $request->new_device_name,
 
 
-                'condition_note'
-                    =>
-                    null,
+                        'condition_note'=>
+                            null,
 
-            ]);
+                    ]);
 
+                }
+
+
+
+                if($detail->source_type === 'TENANT'){
+
+                    $oldDevice->update([
+
+                        'asset_code'=>
+                            $request->new_asset_code,
+
+
+                        'asset_name'=>
+                            $request->new_device_name,
+
+
+                        'condition'=>
+                            'GOOD',
+
+                    ]);
+
+                }
+
+            }
 
 
 
             DB::commit();
 
 
-
             return response()->json([
 
+                'success'=>true,
 
-                'success' => true,
-
-
-                'message'
-                    =>
+                'message'=>
                     'Pergantian device berhasil',
 
-
-                'data'
-                    =>
+                'data'=>
                     $replacement
-
 
             ]);
 
 
 
-        } catch (\Exception $e) {
-
+        }catch(\Exception $e){
 
 
             DB::rollBack();
 
 
-
             return response()->json([
 
+                'success'=>false,
 
-                'success'
-                    =>
-                    false,
-
-
-                'message'
-                    =>
+                'message'=>
                     $e->getMessage()
 
-
-            ], 500);
-
-
+            ],500);
 
         }
 
-
     }
-
-
 }

@@ -14,5 +14,9 @@ class DatabaseSeeder extends Seeder
             ProblemTypeSeeder::class,
             BagDetailSeeder::class,
         ]);
+
+        $this->call([
+            TenantDetailSeeder::class,
+        ]);
     }
 }
