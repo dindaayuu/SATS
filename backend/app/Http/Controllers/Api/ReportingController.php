@@ -4,128 +4,214 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Activity;
+use App\Models\Bag;
 use App\Models\BagDetail;
-use Illuminate\Http\Request;
 use App\Models\Checklist;
+use App\Models\Tenant;
+use Illuminate\Http\Request;
 
 class ReportingController extends Controller
 {
+    /*
+    |--------------------------------------------------------------------------
+    | Dashboard Summary
+    |--------------------------------------------------------------------------
+    */
     public function summary()
-{
-    $today = now()->toDateString();
+    {
+        $today = now()->toDateString();
 
-    $pickup = Activity::where(
-        'type',
-        'pickup'
-    )
-    ->whereDate(
-        'created_at',
-        $today
-    )
-    ->count();
 
-    $return = Activity::where(
-        'type',
-        'return'
-    )
-    ->whereDate(
-        'created_at',
-        $today
-    )
-    ->count();
+        /*
+        |--------------------------------------------------------------------------
+        | SATS
+        |--------------------------------------------------------------------------
+        */
 
-    $activeTenant = Activity::whereDate(
-            'created_at',
-            $today
-        )
-        ->distinct('employee_name')
-        ->count('employee_name');
+        $pickup = Activity::where('type','pickup')
+            ->whereDate('created_at',$today)
+            ->count();
 
-    $activeBag = max(
-        0,
-        $pickup - $return
-    );
 
-    return response()->json([
-        'pickup' => $pickup,
-        'return' => $return,
-        'active_bag' => $activeBag,
-        'active_tenant' => $activeTenant,
-    ]);
-}
+        $return = Activity::where('type','return')
+            ->whereDate('created_at',$today)
+            ->count();
 
+
+        $unreturnedBag = Bag::where(
+            'status',
+            'taken'
+        )->count();
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | CHECKLIST
+        |--------------------------------------------------------------------------
+        */
+
+        $checklistDone = Checklist::whereDate(
+                'check_date',
+                $today
+            )
+            ->distinct('tenant_id')
+            ->count('tenant_id');
+
+
+        $totalTenant = Tenant::where(
+                'is_active',
+                true
+            )
+            ->count();
+
+
+        $checklistPending =
+            $totalTenant -
+            $checklistDone;
+
+
+
+        return response()->json([
+
+            'pickup' =>
+                $pickup,
+
+
+            'unreturned_bag' =>
+                $unreturnedBag,
+
+
+            'return' =>
+                $return,
+
+
+            'checklist_done' =>
+                $checklistDone,
+
+
+            'checklist_pending' =>
+                $checklistPending,
+
+        ]);
+    }
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pickup Return Chart
+    |--------------------------------------------------------------------------
+    */
     public function activityChart()
     {
-        $pickup = Activity::selectRaw("
-                HOUR(created_at) as hour,
-                COUNT(*) as total
-            ")
-            ->where('type', 'pickup')
+        $pickup = Activity::selectRaw(
+                'HOUR(created_at) as hour, COUNT(*) as total'
+            )
+            ->where('type','pickup')
             ->groupBy('hour')
-            ->pluck('total', 'hour');
+            ->pluck(
+                'total',
+                'hour'
+            );
 
-        $return = Activity::selectRaw("
-                HOUR(created_at) as hour,
-                COUNT(*) as total
-            ")
-            ->where('type', 'return')
+
+        $return = Activity::selectRaw(
+                'HOUR(created_at) as hour, COUNT(*) as total'
+            )
+            ->where('type','return')
             ->groupBy('hour')
-            ->pluck('total', 'hour');
+            ->pluck(
+                'total',
+                'hour'
+            );
+
 
         $labels = [];
         $pickupData = [];
         $returnData = [];
 
-        for ($i = 8; $i <= 18; $i++) {
-            $labels[] = sprintf(
-                '%02d:00',
-                $i
-            );
+
+        for(
+            $i = 8;
+            $i <= 18;
+            $i++
+        ){
+
+            $labels[] =
+                sprintf(
+                    '%02d:00',
+                    $i
+                );
+
 
             $pickupData[] =
                 $pickup[$i] ?? 0;
+
 
             $returnData[] =
                 $return[$i] ?? 0;
         }
 
+
+
         return response()->json([
-            'labels' => $labels,
-            'pickup' => $pickupData,
-            'return' => $returnData,
+
+            'labels' =>
+                $labels,
+
+            'pickup' =>
+                $pickupData,
+
+            'return' =>
+                $returnData,
+
         ]);
     }
 
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Top Store Activity
+    |--------------------------------------------------------------------------
+    */
     public function topStores()
     {
-        $stores = Activity::join(
+        return Activity::join(
                 'bag_logs',
                 'activities.id',
                 '=',
                 'bag_logs.activity_id'
             )
-            ->selectRaw("
-                bag_logs.name_store,
-                COUNT(*) as total
-            ")
+            ->selectRaw(
+                'bag_logs.name_store, COUNT(*) as total'
+            )
             ->groupBy(
                 'bag_logs.name_store'
             )
-            ->orderByDesc('total')
+            ->orderByDesc(
+                'total'
+            )
             ->limit(5)
             ->get();
-
-        return response()->json(
-            $stores
-        );
     }
 
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Problem Device
+    |--------------------------------------------------------------------------
+    */
     public function problematicDevices()
     {
-        $devices = BagDetail::selectRaw("
-                asset,
-                COUNT(*) as total
-            ")
+        $devices = BagDetail::selectRaw(
+                'asset, COUNT(*) as total'
+            )
             ->whereNotNull(
                 'condition_note'
             )
@@ -134,74 +220,103 @@ class ReportingController extends Controller
                 '!=',
                 ''
             )
-            ->groupBy('asset')
-            ->orderByDesc('total')
+            ->groupBy(
+                'asset'
+            )
+            ->orderByDesc(
+                'total'
+            )
             ->limit(5)
             ->get();
 
-        $grandTotal =
-            $devices->sum('total');
 
-        $devices = $devices->map(
-            function ($item)
-            use ($grandTotal) {
+        $total =
+            $devices->sum(
+                'total'
+            );
+
+
+        return $devices->map(
+            function($item) use($total){
 
                 $item->percentage =
-                    $grandTotal > 0
-                        ? round(
-                            ($item->total / $grandTotal)
-                            * 100
-                        )
-                        : 0;
+                    $total > 0
+                    ? round(
+                        (
+                            $item->total /
+                            $total
+                        ) * 100
+                    )
+                    : 0;
+
 
                 return $item;
             }
         );
-
-        return response()->json(
-            $devices
-        );
     }
 
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Device Belum Return
+    |--------------------------------------------------------------------------
+    */
     public function unreturnedDevices()
     {
-        $devices = BagDetail::selectRaw("
-                asset,
-                COUNT(*) as total
-            ")
+        $devices = BagDetail::selectRaw(
+                'asset, COUNT(*) as total'
+            )
             ->where(
                 'is_return',
                 false
             )
-            ->groupBy('asset')
-            ->orderByDesc('total')
+            ->groupBy(
+                'asset'
+            )
+            ->orderByDesc(
+                'total'
+            )
             ->limit(5)
             ->get();
 
-        $grandTotal =
-            $devices->sum('total');
 
-        $devices = $devices->map(
-            function ($item)
-            use ($grandTotal) {
+
+        $total =
+            $devices->sum(
+                'total'
+            );
+
+
+
+        return $devices->map(
+            function($item) use($total){
 
                 $item->percentage =
-                    $grandTotal > 0
-                        ? round(
-                            ($item->total / $grandTotal)
-                            * 100
-                        )
-                        : 0;
+                    $total > 0
+                    ? round(
+                        (
+                            $item->total /
+                            $total
+                        ) * 100
+                    )
+                    : 0;
+
 
                 return $item;
             }
         );
-
-        return response()->json(
-            $devices
-        );
     }
 
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Dashboard History SATS
+    |--------------------------------------------------------------------------
+    */
     public function dashboardHistory()
     {
         $history = Activity::with(
@@ -210,166 +325,112 @@ class ReportingController extends Controller
             ->latest()
             ->take(6)
             ->get()
-            ->map(function (
-                $activity
-            ) {
+            ->map(
+                function($activity){
 
-                $bagLog =
-                    $activity
+
+                    $bagLog =
+                        $activity
                         ->bagLogs
                         ->first();
 
-                return [
-                    'time' =>
-                        $activity
+
+
+                    return [
+
+                        'time' =>
+                            $activity
                             ->created_at
                             ->format('H:i'),
 
-                    'name' =>
-                        $activity
+
+                        'name' =>
+                            $activity
                             ->employee_name,
 
-                    'store' =>
-                        $bagLog
+
+                        'store' =>
+                            $bagLog
                             ? $bagLog->name_store
                             : '-',
 
-                    'status' =>
-                        ucfirst(
-                            $activity->type
-                        ),
-                ];
-            });
+
+                        'status' =>
+                            ucfirst(
+                                $activity->type
+                            ),
+
+                    ];
+                }
+            );
+
+
 
         return response()->json(
             $history
         );
     }
 
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Report SATS Detail
+    |--------------------------------------------------------------------------
+    */
     public function transactions(Request $request)
     {
-        $query = Activity::with('bagLogs.bag');
-
-        $from = $request->query('from');
-        $to = $request->query('to');
-
-        if ($from) {
-            $query->whereDate(
-                'created_at',
-                '>=',
-                $from
+        $query =
+            Activity::with(
+                'bagLogs.bag'
             );
-        }
 
-        if ($to) {
-            $query->whereDate(
-                'created_at',
-                '<=',
-                $to
-            );
-        }
-    
-        $transactions = $query
+
+        $transactions =
+            $query
             ->latest()
             ->paginate(5);
-    
-        $transactions
-            ->getCollection()
-            ->transform(
-                function ($activity) {
-    
-                    $bagLog =
-                        $activity
-                            ->bagLogs
-                            ->first();
-    
-                    return [
-                        'id' =>
-                            $activity->id,
-    
-                        'date' =>
-                            $activity
-                                ->created_at
-                                ->format(
-                                    'd/m/Y'
-                                ),
-    
-                        'time' =>
-                            $activity
-                                ->created_at
-                                ->format(
-                                    'H:i'
-                                ),
-    
-                        'name' =>
-                            $activity
-                                ->employee_name,
-    
-                        'store' =>
-                            $bagLog
-                                ? $bagLog
-                                    ->name_store
-                                : '-',
-    
-                        'bag' =>
-                            $bagLog &&
-                            $bagLog->bag
-                                ? $bagLog
-                                    ->bag
-                                    ->barcode
-                                : '-',
-    
-                        'type' =>
-                            ucfirst(
-                                $activity
-                                    ->type
-                            ),
-    
-                        'status' =>
-                            ucfirst(
-                                $activity
-                                    ->type
-                            ),
-                    ];
-                }
-            );
-    
+
+
+
         return response()->json(
             $transactions
         );
     }
 
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Checklist History
+    |--------------------------------------------------------------------------
+    */
     public function checklistHistory()
-{
+    {
+        $data = Checklist::with([
 
-    $data = Checklist::with([
+                'tenant',
+                'bag',
+                'details.problemType',
+                'details.replacement'
 
-            'tenant',
-
-            'bag',
-
-            'details.problemType',
-
-            'details.replacement'
-
-        ])
-
-        ->latest()
-
-        ->get();
+            ])
+            ->latest()
+            ->get();
 
 
 
-    return response()->json([
+        return response()->json([
+
+            'success' =>
+                true,
 
 
-        'success' => true,
+            'data' =>
+                $data,
 
-
-        'data' => $data
-
-
-    ]);
-
-}
+        ]);
+    }
 }
