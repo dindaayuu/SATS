@@ -377,6 +377,130 @@ body{
   color:#7d8192;
 }
 
+.bag-item {
+
+  display: flex;
+
+  flex-direction: column;
+
+}
+
+
+.bag-header-row {
+
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+}
+
+
+
+.bag-actions {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+}
+
+
+
+.detail-eye-btn {
+
+  width: 42px;
+
+  height: 42px;
+
+
+  border: none;
+
+  border-radius: 14px;
+
+
+  background: #ecfdf5;
+
+
+  color: #15803d;
+
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+
+  cursor: pointer;
+
+}
+
+
+
+.pickup-detail-list {
+
+  width: 100%;
+
+  margin-top: 18px;
+
+
+  display: flex;
+
+  flex-direction: column;
+
+
+  gap: 12px;
+
+
+  animation:
+    dropdownSmooth .25s ease;
+
+}
+
+
+
+.pickup-detail-item {
+
+  width: 100%;
+
+
+  padding:
+    16px 20px;
+
+
+  background:
+    #f8fcf9;
+
+
+  border:
+    1px solid #dcebe1;
+
+
+  border-radius:
+    18px;
+
+
+  box-sizing:
+    border-box;
+
+}
+
+
+
+.pickup-detail-item strong {
+
+  font-size: 15px;
+
+  color:#183153;
+
+}
+
 /* ACTION */
 
 .bag-actions{
@@ -673,6 +797,115 @@ body{
     transform:
       translateX(-50%)
       translateY(0);
+
+  }
+
+}
+
+.pickup-detail-toggle {
+  margin-top: 14px;
+
+  padding: 10px 14px;
+
+  background: #ecfdf5;
+
+  border-radius: 12px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  color: #15803d;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+
+.pickup-detail-toggle span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pickup-detail-list {
+  width: 100%;
+
+  margin-top: 16px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 12px;
+
+  animation: dropdownSmooth .25s ease;
+}
+
+
+.pickup-detail-item {
+  width: 100%;
+
+  padding: 16px 20px;
+
+  background: #f7fbf8;
+
+  border: 1px solid #e0eee5;
+
+  border-radius: 20px;
+
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+
+  box-sizing: border-box;
+}
+
+
+
+.pickup-detail-item strong {
+
+  color: #183153;
+
+  font-size: 15px;
+
+  font-weight: 700;
+
+}
+
+
+
+.pickup-detail-item span {
+
+  color: #6b7280;
+
+  font-size: 14px;
+
+}
+
+
+
+@keyframes dropdownSmooth {
+
+  from {
+
+    opacity: 0;
+
+    transform: translateY(-6px);
+
+  }
+
+
+  to {
+
+    opacity: 1;
+
+    transform: translateY(0);
 
   }
 

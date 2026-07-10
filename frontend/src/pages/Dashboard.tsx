@@ -18,7 +18,9 @@ export default function Dashboard() {
 
   const [availableBags, setAvailableBags] = useState<Bag[]>([]);
   const [usedBags, setUsedBags] = useState<Bag[]>([]);
-
+  
+  const [searchAvailable, setSearchAvailable] = useState("");
+  const [searchUsed, setSearchUsed] = useState("");
   useEffect(() => {
     const timer = setInterval(() => {
       setTime(new Date());
@@ -50,6 +52,32 @@ export default function Dashboard() {
 
   const formattedTime = time.toLocaleTimeString("id-ID");
 
+
+  const filteredAvailableBags = availableBags.filter(
+    (bag) =>
+      bag.name
+        .toLowerCase()
+        .includes(searchAvailable.toLowerCase()) ||
+      bag.name_store
+        .toLowerCase()
+        .includes(searchAvailable.toLowerCase())
+  );
+  
+  
+  const filteredUsedBags = usedBags.filter(
+    (bag) =>
+      bag.name
+        .toLowerCase()
+        .includes(searchUsed.toLowerCase()) ||
+      bag.name_store
+        .toLowerCase()
+        .includes(searchUsed.toLowerCase()) ||
+      (bag.employee_name || "")
+        .toLowerCase()
+        .includes(searchUsed.toLowerCase())
+  );
+  
+  
   return (
     <div className="dashboard">
 
@@ -86,12 +114,12 @@ export default function Dashboard() {
 
           <div className="menu-content">
 
-            <h2>Pengambilan Tas</h2>
+            <h2>Ambil Tas</h2>
 
             <p>Proses pengambilan Tas Tenant</p>
 
             <button className="pickup-btn">
-              Mulai Pengambilan →
+              Mulai Ambil →
             </button>
 
           </div>
@@ -103,17 +131,17 @@ export default function Dashboard() {
         <Link to="/return" className="menu-card">
 
           <div className="menu-icon orange-icon">
-            📦
+          📥
           </div>
 
           <div className="menu-content">
 
-            <h2>Pengembalian Tas</h2>
+            <h2>Kembali Tas</h2>
 
             <p>Proses pengembalian Tas Tenant</p>
 
             <button className="return-btn">
-              Mulai Pengembalian →
+              Mulai Kembali →
             </button>
 
           </div>
@@ -132,18 +160,40 @@ export default function Dashboard() {
 
         <div className="table-card">
 
-          <div className="table-top">
+        <div className="table-top">
 
-            <div>
-              <h3>Tas Tersedia</h3>
-              <p>Daftar tas yang masih tersedia</p>
-            </div>
+<div className="table-title">
 
-            <div className="count green-count">
-              {availableBags.length} Tas
-            </div>
+  <h3>
+    Tas Tersedia
+  </h3>
 
-          </div>
+  <p>
+    Daftar tas yang masih tersedia
+  </p>
+
+</div>
+
+
+<input
+  className="header-search"
+  type="text"
+  placeholder="🔍 Cari tas..."
+  value={searchAvailable}
+  onChange={(e) =>
+    setSearchAvailable(e.target.value)
+  }
+/>
+
+
+<div className="count green-count">
+
+  {availableBags.length} Tas
+
+</div>
+
+
+</div>
 
           <div className="table-header">
             <div>Nama Tas</div>
@@ -153,8 +203,7 @@ export default function Dashboard() {
 
           <div className="table-body">
 
-            {availableBags.map((bag) => (
-
+          {filteredAvailableBags.map((bag) => (
               <div className="table-row" key={bag.id}>
 
                 <div>{bag.name}</div>
@@ -175,22 +224,43 @@ export default function Dashboard() {
 
         </div>
 
-        {/* TAS DIPAKAI */}
+     {/* TAS DIPAKAI */}
 
-        <div className="table-card">
+<div className="table-card">
 
-          <div className="table-top">
+<div className="table-top">
 
-            <div>
-              <h3>Tas Dipakai</h3>
-              <p>Daftar tas yang sedang dipakai</p>
-            </div>
+  <div className="table-title">
 
-            <div className="badge orange-badge">
-              {usedBags.length} Tas
-            </div>
+    <h3>
+      Tas Dipakai
+    </h3>
 
-          </div>
+    <p>
+      Daftar tas yang sedang dipakai
+    </p>
+
+  </div>
+
+
+  <input
+    className="header-search"
+    type="text"
+    placeholder="🔍 Cari tas..."
+    value={searchUsed}
+    onChange={(e) =>
+      setSearchUsed(e.target.value)
+    }
+  />
+
+
+  <div className="badge orange-badge">
+
+    {usedBags.length} Tas
+
+  </div>
+
+</div>
 
           <div className="used-header">
             <div>Nama Tas</div>
@@ -202,16 +272,14 @@ export default function Dashboard() {
 
           <div className="table-scroll">
 
-            {usedBags.length === 0 ? (
-
+          {filteredUsedBags.length === 0 ? (
               <div className="empty-used">
                 Belum ada tas dipakai
               </div>
 
             ) : (
 
-              usedBags.map((bag) => (
-
+              filteredUsedBags.map((bag) => (
                 <div className="used-row" key={bag.id}>
 
                   <div>{bag.name}</div>

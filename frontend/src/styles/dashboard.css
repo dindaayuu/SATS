@@ -472,3 +472,86 @@ body{
   color:#999;
   font-size:14px;
 }
+
+.header-search {
+
+  width: 260px;
+
+  height: 42px;
+
+
+  padding:
+    0 16px;
+
+
+  background:
+    #ffffff;
+
+
+  border:
+    1px solid #dbe3df;
+
+
+  border-radius:
+    22px;
+
+
+  outline:
+    none;
+
+
+  font-size:
+    14px;
+
+
+  color:
+    #334155;
+
+
+  transition:
+    .2s ease;
+
+}
+
+
+
+.header-search:focus {
+
+  border-color:
+    #79a86f;
+
+
+  box-shadow:
+    0 0 0 3px
+    rgba(121,168,111,.15);
+
+}
+
+
+
+.header-search::placeholder {
+
+  color:
+    #94a3b8;
+
+}
+
+
+
+.table-top {
+
+  display:flex;
+
+  align-items:center;
+
+  gap:16px;
+
+}
+
+
+
+.table-title {
+
+  flex:1;
+
+}
