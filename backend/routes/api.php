@@ -330,4 +330,9 @@ Route::prefix('reporting')
         ]
     );
 
+    Route::get(
+        '/dashboard-checklist-history',
+        [ReportingController::class, 'dashboardChecklistHistory']
+    );
+
 });

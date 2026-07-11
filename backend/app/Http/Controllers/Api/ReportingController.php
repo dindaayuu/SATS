@@ -319,56 +319,26 @@ class ReportingController extends Controller
     */
     public function dashboardHistory()
     {
-        $history = Activity::with(
-                'bagLogs'
-            )
+        $today = now()->toDateString();
+    
+        $history = Activity::with("bagLogs")
+            ->whereDate("created_at", $today)
             ->latest()
-            ->take(6)
+            ->take(8)
             ->get()
-            ->map(
-                function($activity){
-
-
-                    $bagLog =
-                        $activity
-                        ->bagLogs
-                        ->first();
-
-
-
-                    return [
-
-                        'time' =>
-                            $activity
-                            ->created_at
-                            ->format('H:i'),
-
-
-                        'name' =>
-                            $activity
-                            ->employee_name,
-
-
-                        'store' =>
-                            $bagLog
-                            ? $bagLog->name_store
-                            : '-',
-
-
-                        'status' =>
-                            ucfirst(
-                                $activity->type
-                            ),
-
-                    ];
-                }
-            );
-
-
-
-        return response()->json(
-            $history
-        );
+            ->map(function ($activity) {
+    
+                $bagLog = $activity->bagLogs->first();
+    
+                return [
+                    "time" => $activity->created_at->format("H:i"),
+                    "name" => $activity->employee_name,
+                    "store" => $bagLog?->name_store ?? "-",
+                    "status" => ucfirst($activity->type),
+                ];
+            });
+    
+        return response()->json($history);
     }
 
 
@@ -433,4 +403,43 @@ class ReportingController extends Controller
 
         ]);
     }
+
+    public function dashboardChecklistHistory()
+{
+    $today = now()->toDateString();
+
+    $history = Checklist::with("tenant")
+        ->whereDate("check_date", $today)
+        ->latest()
+        ->take(8)
+        ->get()
+        ->map(function ($item) {
+
+            return [
+
+                "finish_time" =>
+                    optional($item->finish_time)->format("H:i")
+                    ?? optional($item->updated_at)->format("H:i"),
+
+                "pic" =>
+                    $item->pic_name,
+
+                "tenant" =>
+                    optional($item->tenant)->name,
+
+                "total_device" =>
+                    $item->details()->count(),
+
+                "status" =>
+                    $item->details()
+                        ->where("condition", "problem")
+                        ->exists()
+                        ? "PROBLEM"
+                        : "DONE",
+            ];
+
+        });
+
+    return response()->json($history);
+}
 }
