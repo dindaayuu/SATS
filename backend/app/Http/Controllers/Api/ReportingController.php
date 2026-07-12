@@ -104,69 +104,59 @@ class ReportingController extends Controller
     | Pickup Return Chart
     |--------------------------------------------------------------------------
     */
-    public function activityChart()
+    public function activityChart(Request $request)
     {
+        $from = $request->from;
+        $to = $request->to;
+    
         $pickup = Activity::selectRaw(
                 'HOUR(created_at) as hour, COUNT(*) as total'
             )
-            ->where('type','pickup')
+            ->where('type', 'pickup')
+            ->when(
+                $from && $to,
+                fn($q) => $q->whereBetween(
+                    'created_at',
+                    [
+                        $from . ' 00:00:00',
+                        $to . ' 23:59:59',
+                    ]
+                )
+            )
             ->groupBy('hour')
-            ->pluck(
-                'total',
-                'hour'
-            );
-
-
+            ->pluck('total', 'hour');
+    
         $return = Activity::selectRaw(
                 'HOUR(created_at) as hour, COUNT(*) as total'
             )
-            ->where('type','return')
+            ->where('type', 'return')
+            ->when(
+                $from && $to,
+                fn($q) => $q->whereBetween(
+                    'created_at',
+                    [
+                        $from . ' 00:00:00',
+                        $to . ' 23:59:59',
+                    ]
+                )
+            )
             ->groupBy('hour')
-            ->pluck(
-                'total',
-                'hour'
-            );
-
-
+            ->pluck('total', 'hour');
+    
         $labels = [];
         $pickupData = [];
         $returnData = [];
-
-
-        for(
-            $i = 8;
-            $i <= 18;
-            $i++
-        ){
-
-            $labels[] =
-                sprintf(
-                    '%02d:00',
-                    $i
-                );
-
-
-            $pickupData[] =
-                $pickup[$i] ?? 0;
-
-
-            $returnData[] =
-                $return[$i] ?? 0;
+    
+        for ($i = 8; $i <= 18; $i++) {
+            $labels[] = sprintf('%02d:00', $i);
+            $pickupData[] = $pickup[$i] ?? 0;
+            $returnData[] = $return[$i] ?? 0;
         }
-
-
-
+    
         return response()->json([
-
-            'labels' =>
-                $labels,
-
-            'pickup' =>
-                $pickupData,
-
-            'return' =>
-                $returnData,
-
+            'labels' => $labels,
+            'pickup' => $pickupData,
+            'return' => $returnData,
         ]);
     }
 
@@ -178,26 +168,35 @@ class ReportingController extends Controller
     | Top Store Activity
     |--------------------------------------------------------------------------
     */
-    public function topStores()
-    {
-        return Activity::join(
-                'bag_logs',
-                'activities.id',
-                '=',
-                'bag_logs.activity_id'
+    public function topStores(Request $request)
+{
+    $from = $request->from;
+    $to = $request->to;
+
+    return Activity::join(
+            'bag_logs',
+            'activities.id',
+            '=',
+            'bag_logs.activity_id'
+        )
+        ->when(
+            $from && $to,
+            fn($q) => $q->whereBetween(
+                'activities.created_at',
+                [
+                    $from . ' 00:00:00',
+                    $to . ' 23:59:59',
+                ]
             )
-            ->selectRaw(
-                'bag_logs.name_store, COUNT(*) as total'
-            )
-            ->groupBy(
-                'bag_logs.name_store'
-            )
-            ->orderByDesc(
-                'total'
-            )
-            ->limit(5)
-            ->get();
-    }
+        )
+        ->selectRaw(
+            'bag_logs.name_store as name, COUNT(*) as total'
+        )
+        ->groupBy('bag_logs.name_store')
+        ->orderByDesc('total')
+        ->limit(5)
+        ->get();
+}
 
 
 
@@ -207,52 +206,32 @@ class ReportingController extends Controller
     | Problem Device
     |--------------------------------------------------------------------------
     */
-    public function problematicDevices()
+    public function problematicDevices(Request $request)
     {
+        $from = $request->from;
+        $to = $request->to;
+    
         $devices = BagDetail::selectRaw(
                 'asset, COUNT(*) as total'
             )
-            ->whereNotNull(
-                'condition_note'
+            ->whereNotNull('condition_note')
+            ->where('condition_note', '!=', '')
+            ->when(
+                $from && $to,
+                fn($q) => $q->whereBetween(
+                    'updated_at',
+                    [
+                        $from . ' 00:00:00',
+                        $to . ' 23:59:59',
+                    ]
+                )
             )
-            ->where(
-                'condition_note',
-                '!=',
-                ''
-            )
-            ->groupBy(
-                'asset'
-            )
-            ->orderByDesc(
-                'total'
-            )
+            ->groupBy('asset')
+            ->orderByDesc('total')
             ->limit(5)
             ->get();
-
-
-        $total =
-            $devices->sum(
-                'total'
-            );
-
-
-        return $devices->map(
-            function($item) use($total){
-
-                $item->percentage =
-                    $total > 0
-                    ? round(
-                        (
-                            $item->total /
-                            $total
-                        ) * 100
-                    )
-                    : 0;
-
-
-                return $item;
-            }
-        );
+    
+        return $devices;
     }
 
 
@@ -263,50 +242,31 @@ class ReportingController extends Controller
     | Device Belum Return
     |--------------------------------------------------------------------------
     */
-    public function unreturnedDevices()
+    public function unreturnedDevices(Request $request)
     {
+        $from = $request->from;
+        $to = $request->to;
+    
         $devices = BagDetail::selectRaw(
                 'asset, COUNT(*) as total'
             )
-            ->where(
-                'is_return',
-                false
+            ->where('is_return', false)
+            ->when(
+                $from && $to,
+                fn($q) => $q->whereBetween(
+                    'updated_at',
+                    [
+                        $from . ' 00:00:00',
+                        $to . ' 23:59:59',
+                    ]
+                )
             )
-            ->groupBy(
-                'asset'
-            )
-            ->orderByDesc(
-                'total'
-            )
+            ->groupBy('asset')
+            ->orderByDesc('total')
             ->limit(5)
             ->get();
-
-
-
-        $total =
-            $devices->sum(
-                'total'
-            );
-
-
-
-        return $devices->map(
-            function($item) use($total){
-
-                $item->percentage =
-                    $total > 0
-                    ? round(
-                        (
-                            $item->total /
-                            $total
-                        ) * 100
-                    )
-                    : 0;
-
-
-                return $item;
-            }
-        );
+    
+        return $devices;
     }
 
 
@@ -351,18 +311,24 @@ class ReportingController extends Controller
     */
     public function transactions(Request $request)
     {
-        $query =
-            Activity::with(
-                'bagLogs.bag'
+        $query = Activity::with('bagLogs.bag');
+
+        if ($request->filled('from') && $request->filled('to')) {
+        
+            $query->whereBetween(
+                'created_at',
+                [
+                    $request->from . ' 00:00:00',
+                    $request->to . ' 23:59:59',
+                ]
             );
-
-
+        
+        }
+        
         $transactions =
             $query
             ->latest()
             ->paginate(5);
-
-
 
         return response()->json(
             $transactions
