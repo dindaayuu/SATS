@@ -1,8 +1,20 @@
+@import url(
+"https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700;800;900&display=swap"
+);
+
 *{
   margin:0;
   padding:0;
   box-sizing:border-box;
-  font-family:Inter,sans-serif;
+  font-family:"Nunito Sans",sans-serif;
+}
+
+body{
+  color:#1f2937;
+}
+
+body{
+  font-feature-settings:"liga" 1;
 }
 
 html,
@@ -68,14 +80,10 @@ body{
 
 /* TEXT HEADER */
 .title h1{
-  font-size:16px;
+  font-size:18px;
   font-weight:800;
-
-  color:#121827;
-
-  margin-bottom:1px;
-
-  line-height:1.1;
+  letter-spacing:-.5px;
+  color:#111827;
 }
 
 .title p{
@@ -106,23 +114,26 @@ body{
 .menu-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
-
-  gap:10px;
-
+  gap:12px;
   margin-bottom:10px;
 }
 
+
+/* CARD ACTION */
+
 .menu-card{
-  background:#fff;
+  background:#ffffff;
+
+  min-height:108px;
+
+  padding:18px 26px;
 
   border-radius:22px;
 
-  padding:20px;
-
-  min-height:160px;
-
   display:flex;
-  gap:16px;
+  align-items:center;
+
+  gap:22px;
 
   position:relative;
   overflow:hidden;
@@ -130,94 +141,125 @@ body{
   border:1px solid #ecece7;
 
   text-decoration:none;
+
+  box-shadow:
+    0 8px 22px
+    rgba(30,40,60,.05);
+
+  transition:.25s ease;
 }
 
-.menu-icon{
-  width:82px;
-  height:82px;
 
-  border-radius:22px;
+.menu-card:hover{
+  transform:
+    translateY(-2px);
+
+  box-shadow:
+    0 14px 32px
+    rgba(30,40,60,.08);
+}
+
+
+/* ICON */
+
+.menu-icon{
+  width:64px;
+  height:64px;
+
+  min-width:64px;
+
+  border-radius:18px;
 
   display:flex;
   align-items:center;
   justify-content:center;
 
-  font-size:38px;
-
   z-index:2;
 }
+
+
+.menu-icon svg{
+  width:34px;
+  height:34px;
+}
+
 
 .green-icon{
-  background:#edf3e2;
+  background:#edf7ea;
+  color:#4f9657;
 }
+
 
 .orange-icon{
-  background:#fbf0e4;
+  background:#fbf0df;
+  color:#dc9136;
 }
 
+
+/* TEXT */
+
 .menu-content{
+  flex:1;
+
   z-index:2;
 }
 
+
 .menu-content h2{
-  font-size:22px;
+  font-size:23px;
+
   font-weight:800;
 
-  color:#121827;
+  letter-spacing:-.8px;
 
-  margin-bottom:6px;
+  color:#111827;
+
+  margin-bottom:4px;
 }
+
 
 .menu-content p{
   font-size:14px;
-  color:#6e7688;
 
-  margin-bottom:24px;
+  font-weight:500;
+
+  color:#667085;
 }
+
+
+/* BUTTON DIHILANGKAN 
+   KARENA CARD SUDAH CLICK */
 
 .pickup-btn,
 .return-btn{
-  height:46px;
-
-  padding:0 24px;
-
-  border:none;
-  border-radius:15px;
-
-  color:white;
-
-  font-size:15px;
-  font-weight:700;
-
-  cursor:pointer;
+  display:none;
 }
 
-.pickup-btn{
-  background:#84ae3f;
-}
 
-.return-btn{
-  background:#e8953a;
-}
+/* BACKGROUND */
 
 .circle{
   position:absolute;
 
-  width:180px;
-  height:180px;
+  width:150px;
+  height:150px;
 
   border-radius:50%;
 
-  bottom:-100px;
-  right:-80px;
+  bottom:-90px;
+  right:-55px;
+
+  opacity:.9;
 }
+
 
 .green-circle{
-  background:#eef4e3;
+  background:#edf6df;
 }
 
+
 .orange-circle{
-  background:#fbf0e4;
+  background:#fbefdf;
 }
 
 /* TABLE */
@@ -259,11 +301,10 @@ body{
 }
 
 .table-top h3{
-  font-size:18px;
+  font-size:20px;
   font-weight:800;
-
-  color:#121827;
-
+  letter-spacing:-.5px;
+  color:#111827;
   margin-bottom:3px;
 }
 
