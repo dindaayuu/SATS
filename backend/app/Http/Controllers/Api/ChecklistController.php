@@ -454,157 +454,127 @@ class ChecklistController extends Controller
         ]);
 
     }
-
-        public function report()
+    public function report(Request $request)
     {
-        $data = Checklist::with([
+        $query = Checklist::with([
             'tenant',
             'details.problemType',
             'details.replacement'
-        ])
-        ->latest()
-        ->get()
-        ->map(function($item){
-
-            return [
-
-                'id'=>$item->id,
-
-                'tenant'=>$item->tenant->name,
-
-                'area'=>$item->tenant->area,
-
-                'overall_note'=>$item->overall_note,
-
-                'pic'=>$item->pic_name,
-
-                'date'=>$item->check_date,
-
-                'start_time'=>$item->start_time,
-
-                'finish_time'=>$item->finish_time,
-
-                'status'=>
-                    $item
-                    ->details
-                    ->where('condition','PROBLEM')
-                    ->count() > 0
-                    ? 'PROBLEM'
-                    : 'DONE',
-
-                'total_device'=>
-                    $item->details->count(),
-
-                'total_problem'=>
-                    $item
-                    ->details
-                    ->where(
-                        'condition',
-                        'PROBLEM'
-                    )
-                    ->count(),
-
-
-                'details'=>
-                    $item
-                    ->details
-                    ->map(function($detail){
-
-                        return [
-
-                            'device'=>
-                                $detail
-                                ->device_name_snapshot,
-
-                            'barcode'=>
-                                $detail
-                                ->asset_code_snapshot,
-
-
-                            'condition'=>
-                                $detail->condition,
-
-
-                            'problem'=>
-                                $detail
-                                ->problemType
-                                ->name
-                                ?? null,
-
-
-                            'note'=>
-                                $detail
-                                ->custom_note,
-
-
-                            'replacement'=>
-
-                                $detail->replacement
-                                ?
-
-                                [
-
-                                    'old_device'=>
-                                        $detail
-                                        ->replacement
-                                        ->old_device_name,
-
-
-                                    'old_code'=>
-                                        $detail
-                                        ->replacement
-                                        ->old_asset_code,
-
-
-                                    'new_device'=>
-                                        $detail
-                                        ->replacement
-                                        ->new_device_name,
-
-
-                                    'new_code'=>
-                                        $detail
-                                        ->replacement
-                                        ->new_asset_code,
-
-
-                                    'reason'=>
-                                        $detail
-                                        ->replacement
-                                        ->reason,
-
-
-                                    'replaced_by'=>
-                                        $detail
-                                        ->replacement
-                                        ->replaced_by,
-
-
-                                    'time'=>
-                                        $detail
-                                        ->replacement
-                                        ->replacement_time,
-
-                                ]
-
-                                :
-
-                                null
-
-                        ];
-
-                    })
-
-            ];
-
-        });
-
+        ]);
+    
+        if ($request->filled('from') && $request->filled('to')) {
+    
+            $query->whereBetween(
+                'check_date',
+                [
+                    $request->from,
+                    $request->to
+                ]
+            );
+    
+        }
+    
+        $data = $query
+            ->latest('check_date')
+            ->get()
+            ->map(function ($item) {
+    
+                return [
+    
+                    'id' => $item->id,
+    
+                    'tenant' => $item->tenant->name,
+    
+                    'area' => $item->tenant->area,
+    
+                    'overall_note' => $item->overall_note,
+    
+                    'pic' => $item->pic_name,
+    
+                    'date' => $item->check_date,
+    
+                    'start_time' => $item->start_time,
+    
+                    'finish_time' => $item->finish_time,
+    
+                    'status' =>
+                        $item->details
+                            ->where('condition', 'PROBLEM')
+                            ->count() > 0
+                            ? 'PROBLEM'
+                            : 'DONE',
+    
+                    'total_device' =>
+                        $item->details->count(),
+    
+                    'total_problem' =>
+                        $item->details
+                            ->where('condition', 'PROBLEM')
+                            ->count(),
+    
+                    'details' =>
+    
+                        $item->details->map(function ($detail) {
+    
+                            return [
+    
+                                'device' =>
+                                    $detail->device_name_snapshot,
+    
+                                'barcode' =>
+                                    $detail->asset_code_snapshot,
+    
+                                'condition' =>
+                                    $detail->condition,
+    
+                                'problem' =>
+                                    optional($detail->problemType)->name,
+    
+                                'note' =>
+                                    $detail->custom_note,
+    
+                                'replacement' =>
+    
+                                    $detail->replacement
+    
+                                    ? [
+    
+                                        'old_device' =>
+                                            $detail->replacement->old_device_name,
+    
+                                        'old_code' =>
+                                            $detail->replacement->old_asset_code,
+    
+                                        'new_device' =>
+                                            $detail->replacement->new_device_name,
+    
+                                        'new_code' =>
+                                            $detail->replacement->new_asset_code,
+    
+                                        'reason' =>
+                                            $detail->replacement->reason,
+    
+                                        'replaced_by' =>
+                                            $detail->replacement->replaced_by,
+    
+                                        'time' =>
+                                            $detail->replacement->replacement_time,
+    
+                                    ]
+    
+                                    : null
+    
+                            ];
+    
+                        })
+    
+                ];
+    
+            });
+    
         return response()->json([
-
-            'success'=>true,
-
-            'data'=>$data
-
+            'success' => true,
+            'data' => $data
         ]);
     }
         public function dashboard()

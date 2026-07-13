@@ -343,32 +343,36 @@ class ReportingController extends Controller
     | Checklist History
     |--------------------------------------------------------------------------
     */
-    public function checklistHistory()
-    {
-        $data = Checklist::with([
+    public function checklistHistory(Request $request)
+{
+    $query = Checklist::with([
+        'tenant',
+        'bag',
+        'details.problemType',
+        'details.replacement'
+    ]);
 
-                'tenant',
-                'bag',
-                'details.problemType',
-                'details.replacement'
+    if ($request->filled('from') && $request->filled('to')) {
 
-            ])
-            ->latest()
-            ->get();
+        $query->whereBetween(
+            'check_date',
+            [
+                $request->from,
+                $request->to,
+            ]
+        );
 
-
-
-        return response()->json([
-
-            'success' =>
-                true,
-
-
-            'data' =>
-                $data,
-
-        ]);
     }
+
+    $data = $query
+        ->latest('check_date')
+        ->get();
+
+    return response()->json([
+        'success' => true,
+        'data' => $data,
+    ]);
+}
 
     public function dashboardChecklistHistory()
 {
