@@ -24,7 +24,7 @@ return [
 
     'asset_api' => [
         'url' => env('ASSET_API_URL'),
-        'token' => env('ASSET_API_TOKEN'),
+        'key' => env('SATS_API_KEY'),
     ],
 
 ];

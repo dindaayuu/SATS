@@ -21,7 +21,8 @@ class TenantController extends Controller
 
             $lastChecklist = DB::table('checklists')
                 ->where('tenant_id', $tenant->id)
-                ->orderByDesc('id')
+                ->whereDate('check_date', today())
+                ->latest('id')
                 ->first();
 
             if (!$lastChecklist) {

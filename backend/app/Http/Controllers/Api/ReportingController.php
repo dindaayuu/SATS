@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Activity;
 use App\Models\Bag;
 use App\Models\BagDetail;
+use App\Models\DeviceReturnHistory;
 use App\Models\Checklist;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
@@ -209,20 +210,21 @@ class ReportingController extends Controller
     public function problematicDevices(Request $request)
     {
         $from = $request->from;
-        $to = $request->to;
+        $to   = $request->to;
     
-        $devices = BagDetail::selectRaw(
-                'asset, COUNT(*) as total'
-            )
+        return DeviceReturnHistory::selectRaw("
+                asset,
+                COUNT(*) as total
+            ")
             ->whereNotNull('condition_note')
             ->where('condition_note', '!=', '')
             ->when(
                 $from && $to,
                 fn($q) => $q->whereBetween(
-                    'updated_at',
+                    'returned_at',
                     [
                         $from . ' 00:00:00',
-                        $to . ' 23:59:59',
+                        $to . ' 23:59:59'
                     ]
                 )
             )
@@ -230,8 +232,6 @@ class ReportingController extends Controller
             ->orderByDesc('total')
             ->limit(5)
             ->get();
-    
-        return $devices;
     }
 
 
@@ -245,19 +245,20 @@ class ReportingController extends Controller
     public function unreturnedDevices(Request $request)
     {
         $from = $request->from;
-        $to = $request->to;
+        $to   = $request->to;
     
-        $devices = BagDetail::selectRaw(
-                'asset, COUNT(*) as total'
-            )
-            ->where('is_return', false)
+        return DeviceReturnHistory::selectRaw("
+                asset,
+                COUNT(*) as total
+            ")
+            ->where('is_return',0)
             ->when(
                 $from && $to,
                 fn($q) => $q->whereBetween(
-                    'updated_at',
+                    'returned_at',
                     [
                         $from . ' 00:00:00',
-                        $to . ' 23:59:59',
+                        $to . ' 23:59:59'
                     ]
                 )
             )
@@ -265,8 +266,6 @@ class ReportingController extends Controller
             ->orderByDesc('total')
             ->limit(5)
             ->get();
-    
-        return $devices;
     }
 
 
@@ -311,7 +310,10 @@ class ReportingController extends Controller
     */
     public function transactions(Request $request)
     {
-        $query = Activity::with('bagLogs.bag');
+        $query = Activity::with([
+            'bagLogs.bag',
+            'deviceReturnHistories'
+        ]);
 
         if ($request->filled('from') && $request->filled('to')) {
         

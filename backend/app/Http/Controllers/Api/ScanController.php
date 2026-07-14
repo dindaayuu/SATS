@@ -10,19 +10,12 @@ use App\Models\Bag;
 use App\Models\BagDetail;
 use App\Models\Activity;
 use App\Models\BagLog;
+use App\Models\DeviceReturnHistory;
 
-use App\Services\AssetApiService;
+
 
 class ScanController extends Controller
 {
-
-    protected $assetApi;
-
-        public function __construct(
-            AssetApiService $assetApi
-        ) {
-            $this->assetApi = $assetApi;
-        }
 
     /*
     |--------------------------------------------------------------------------
@@ -261,20 +254,12 @@ class ScanController extends Controller
         ]);
         
         $detail->is_return = 1;
-        $detail->save();
-        
-        \Log::info('ITEM SAVED', [
-            'id' => $detail->id,
-            'barcode' => $detail->barcode,
-            'is_return_after' => $detail->fresh()->is_return
-        ]);
-        
-        $detail->is_return = 1;
-        $detail->save();
-    
-        return response()->json([
-            'success' => true,
-            'detail' => $detail
+            $detail->save();
+
+            \Log::info('ITEM SAVED', [
+                'id' => $detail->id,
+                'barcode' => $detail->barcode,
+                'is_return_after' => $detail->fresh()->is_return
         ]);
     }
 
@@ -397,6 +382,43 @@ class ScanController extends Controller
             'barcode'     => $bag->barcode,
         ]);
 
+        /*
+|--------------------------------------------------------------------------
+| SIMPAN HISTORY DEVICE RETURN
+|--------------------------------------------------------------------------
+*/
+
+$details = BagDetail::where(
+    'bag_id',
+    $bag->id
+)->get();
+
+foreach ($details as $detail) {
+
+    \App\Models\DeviceReturnHistory::create([
+
+        'activity_id'   => $activity->id,
+
+        'bag_id'        => $bag->id,
+
+        'bag_detail_id' => $detail->id,
+
+        'asset'         => $detail->asset,
+
+        'barcode'       => $detail->barcode,
+
+        'is_return'     => $detail->is_return,
+
+        'condition_note'=> $detail->condition_note,
+
+        'employee_name' => $request->employee_name,
+
+        'returned_at'   => now(),
+
+    ]);
+
+}
+
         return response()->json([
             'success' => true,
             'message' => 'Pengembalian berhasil'
@@ -464,16 +486,5 @@ class ScanController extends Controller
         } catch (\Exception $e) {
             \Log::error('WA Error : ' . $e->getMessage());
         }
-    }
-
-    public function testAsset($code)
-    {
-        $response =
-            $this->assetApi->getBag($code);
-
-        return response()->json([
-            'status' => $response->status(),
-            'body' => $response->json(),
-        ]);
     }
 }

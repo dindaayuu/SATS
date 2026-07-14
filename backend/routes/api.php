@@ -111,14 +111,6 @@ Route::get(
     ]
 );
 
-Route::get(
-    '/test-asset/{code}',
-    [
-        ScanController::class,
-        'testAsset'
-    ]
-);
-
 
 /*
 |--------------------------------------------------------------------------
@@ -333,6 +325,7 @@ Route::prefix('reporting')
     Route::get(
         '/dashboard-checklist-history',
         [ReportingController::class, 'dashboardChecklistHistory']
-    );
+    ); 
 
 });
+
