@@ -980,7 +980,7 @@ const found =
                                     <div className="asset-note-wrapper">
 
                                       <label className="asset-note-label">
-                                        Catatan Kerusakan (Opsional)
+                                        Masukan catatan ketika terjadi kendala (wajib)
                                       </label>
 
                                       <input
