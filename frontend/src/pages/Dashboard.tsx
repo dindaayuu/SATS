@@ -244,7 +244,7 @@ export default function Dashboard() {
 
 
               <p>
-                Proses pengambilan Tas Tenant
+                klik untuk proses pengambilan Tas Tenant
               </p>
 
             </div>
@@ -290,7 +290,7 @@ export default function Dashboard() {
 
 
               <p>
-                Proses pengembalian Tas Tenant
+                klik untuk proses pengembalian Tas Tenant
               </p>
 
             </div>
