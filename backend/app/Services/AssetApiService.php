@@ -10,17 +10,33 @@ class AssetApiService
      * HTTP Client
      */
     private function client()
-    {
-        return Http::acceptJson()
-            ->withHeaders([
-                'X-API-KEY' => config('services.asset_api.key'),
-            ]);
-    }
+{
+    \Log::info('ASSET API CONFIG', [
+        'url' => config('services.asset_api.url'),
+        'key' => config('services.asset_api.key'),
+    ]);
+
+    return Http::acceptJson()
+        ->withHeaders([
+            'X-API-KEY' => config('services.asset_api.key'),
+        ]);
+}
 
     /**
      * Scan Tas + Detail Device
      */
     public function scanBag(string $assetCode)
+    {
+        return $this->client()->get(
+            config('services.asset_api.url')
+            . "/integrations/sats/bags/{$assetCode}"
+        );
+    }
+
+    /**
+     * Scan Ploting Device
+     */
+    public function scanPlotingDevice(string $assetCode)
     {
         return $this->client()->get(
             config('services.asset_api.url')

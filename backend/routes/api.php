@@ -322,10 +322,22 @@ Route::prefix('reporting')
         ]
     );
 
-    Route::get(
-        '/dashboard-checklist-history',
-        [ReportingController::class, 'dashboardChecklistHistory']
-    ); 
+        Route::get(
+            '/dashboard-checklist-history',
+            [ReportingController::class, 'dashboardChecklistHistory']
+        ); 
 
-});
+    });
 
+/*
+|--------------------------------------------------------------------------
+| SATS INTEGRATION
+|--------------------------------------------------------------------------
+| Rute Integrasi dengan IT Asset Management API
+*/
+Route::get('/ploting-devices', [\App\Http\Controllers\SatsIntegrationController::class, 'plotingDevices']);
+Route::get('/ploting-devices/scan/{asset_code}', [\App\Http\Controllers\SatsIntegrationController::class, 'scanPlotingDevice']);
+Route::get('/bags/{asset_code}', [\App\Http\Controllers\SatsIntegrationController::class, 'scanPlotingDevice']);
+Route::get('/stores', [\App\Http\Controllers\SatsIntegrationController::class, 'stores']);
+Route::get('/store-packages/{store_code}', [\App\Http\Controllers\SatsIntegrationController::class, 'storePackage']);
+Route::get('/assets/lookup/{asset_code}', [\App\Http\Controllers\SatsIntegrationController::class, 'assetLookup']);

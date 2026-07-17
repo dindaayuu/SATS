@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
+use App\Services\AssetApiService;
 use App\Models\Tenant;
 use App\Models\Bag;
 use App\Models\Checklist;
@@ -19,152 +20,133 @@ use App\Models\TenantDetail;
 class ChecklistController extends Controller
 {
 
-    public function tenants()
+    public function tenants(AssetApiService $assetApi)
     {
-        $tenants = Tenant::query()
-            ->orderBy('id')
-            ->get();
-    
-        return response()->json([
-            'success' => true,
-            'message' => 'Tenant checklist berhasil diambil',
-            'data' => $tenants
-        ]);
-    }
-    
-    
-    public function detailTenant($id)
-    {
-        $tenant = Tenant::findOrFail($id);
-    
-        $tenantName = strtolower(
-            str_replace(
-                ['-', ' '],
-                '',
-                $tenant->name
-            )
-        );
-    
-        $bag = Bag::with('details')
-            ->get()
-            ->first(function ($item) use ($tenantName) {
-    
-                $storeName = strtolower(
-                    str_replace(
-                        ['-', ' '],
-                        '',
-                        $item->name_store
-                    )
-                );
-    
-                return $storeName === $tenantName;
-            });
-    
-    
-        if ($bag) {
-    
+        $response = $assetApi->stores();
+
+        if (!$response->successful()) {
+
             return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data store.'
+            ], 500);
+
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Store berhasil diambil',
+        'data'    => $response->json('data')
+    ]);
+}
     
+    
+    /**
+     * Menampilkan detail perangkat tenant (toko) untuk proses checklist.
+     * Mengambil data teranyar secara realtime dari API eksternal IT Asset Management,
+     * menyinkronkannya ke database lokal SATS, lalu mengembalikannya ke frontend.
+     */
+    public function detailTenant($id, AssetApiService $assetApi)
+    {
+        try {
+            // 1. Cari tenant di database lokal berdasarkan ID
+            $tenant = Tenant::findOrFail($id);
+
+            // 2. Hubungi API eksternal IT Asset Management untuk menarik data aset toko teranyar
+            $response = $assetApi->storePackage($tenant->code);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                
+                // Mendapatkan array aset dengan fallback ke key 'assets' atau 'devices'
+                $devices = $data['data']['assets'] ?? $data['data']['devices'] ?? $data['assets'] ?? $data['devices'] ?? $data['data'] ?? $data ?? [];
+
+                // Lakukan upsert (update/create) ke tabel tenant_details lokal
+                foreach ($devices as $device) {
+                    $assetCode = $device['asset_code'] ?? $device['barcode'] ?? null;
+                    if ($assetCode) {
+                        TenantDetail::updateOrCreate(
+                            ['asset_code' => $assetCode],
+                            [
+                                'tenant_id' => $tenant->id,
+                                'asset_name' => $device['asset_name'] ?? $device['asset'] ?? $device['name'] ?? 'Unknown Asset',
+                                'condition' => strtoupper($device['condition'] ?? 'GOOD'),
+                                'is_active' => true,
+                            ]
+                        );
+                    }
+                }
+            }
+
+            // 3. Periksa apakah tenant ini memiliki tas (bag) ter-asosiasi berdasarkan nama toko
+            $tenantName = strtolower(str_replace(['-', ' '], '', $tenant->name));
+            $bag = Bag::with('details')
+                ->get()
+                ->first(function ($item) use ($tenantName) {
+                    $storeName = strtolower(str_replace(['-', ' '], '', $item->name_store));
+                    return $storeName === $tenantName;
+                });
+
+            // 4. Jika memiliki tas, kembalikan perangkat di dalam tas tersebut (Source: BAG)
+            if ($bag) {
+                return response()->json([
+                    'success' => true,
+                    'source' => 'BAG',
+                    'data' => [
+                        'tenant' => [
+                            'id' => $tenant->id,
+                            'name' => $tenant->name,
+                            'area' => $tenant->area,
+                        ],
+                        'bag' => $bag,
+                        'devices' => $bag->details->map(function ($item) {
+                            return [
+                                'id' => $item->id,
+                                'asset' => $item->asset,
+                                'barcode' => $item->barcode,
+                                'condition' => $item->condition ?? 'GOOD',
+                                'source_type' => 'BAG',
+                            ];
+                        })
+                    ]
+                ]);
+            }
+
+            // 5. Jika tidak ada tas, kembalikan daftar perangkat toko yang tersinkron dari database lokal (Source: TENANT)
+            $tenantDevices = $tenant->details()->where('is_active', true)->get();
+
+            return response()->json([
                 'success' => true,
-    
-                'source' => 'BAG',
-    
+                'source' => 'TENANT',
                 'data' => [
-    
                     'tenant' => [
                         'id' => $tenant->id,
                         'name' => $tenant->name,
                         'area' => $tenant->area,
                     ],
-    
-                    'bag' => $bag,
-    
-                    'devices' =>
-                        $bag->details
-                        ->map(function($item){
-    
-                            return [
-    
-                                'id' =>
-                                    $item->id,
-    
-                                'asset' =>
-                                    $item->asset,
-    
-                                'barcode' =>
-                                    $item->barcode,
-    
-                                'condition' =>
-                                    $item->condition,
-    
-                                'source_type' =>
-                                    'BAG'
-    
-                            ];
-    
-                        })
-    
-                ]
-    
-            ]);
-    
-        }
-    
-    
-        $devices =
-            $tenant
-            ->details()
-            ->where(
-                'is_active',
-                true
-            )
-            ->get();
-    
-    
-        return response()->json([
-    
-            'success' => true,
-    
-            'source' => 'TENANT',
-    
-            'data' => [
-    
-                'tenant' => [
-                    'id' => $tenant->id,
-                    'name' => $tenant->name,
-                    'area' => $tenant->area,
-                ],
-    
-                'bag' => null,
-    
-                'devices' =>
-                    $devices
-                    ->map(function($item){
-    
+                    'bag' => null,
+                    'devices' => $tenantDevices->map(function ($item) {
                         return [
-    
-                            'id' =>
-                                $item->id,
-    
-                            'asset' =>
-                                $item->asset_name,
-    
-                            'barcode' =>
-                                $item->asset_code,
-    
-                            'condition' =>
-                                $item->condition,
-    
-                            'source_type' =>
-                                'TENANT'
-    
+                            'id' => $item->id,
+                            'asset' => $item->asset_name,
+                            'barcode' => $item->asset_code,
+                            'condition' => $item->condition ?? 'GOOD',
+                            'source_type' => 'TENANT',
                         ];
-    
                     })
-    
-            ]
-    
-        ]);
+                ]
+            ]);
+        } catch (\Exception $e) {
+            // Logging error sistem jika terjadi kegagalan
+            \Log::error('ChecklistController Error: detailTenant', [
+                'id' => $id,
+                'message' => $e->getMessage()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function submit(Request $request)
@@ -664,5 +646,5 @@ class ChecklistController extends Controller
                 'progress' => $progress,
                 'areas' => $areas,
             ]);
-    }
+        }
 }

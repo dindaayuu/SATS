@@ -10,34 +10,16 @@ use Illuminate\Support\Facades\DB;
 class TenantController extends Controller
 {
     /**
-     * Display a listing of active tenants ordered by route_order.
+     * Menampilkan daftar tenant aktif yang diurutkan berdasarkan route_order.
+     * Mengembalikan data langsung dari database lokal untuk mempertahankan
+     * koordinat peta, jumlah area SATS, serta menyertakan kolom 'id' 
+     * agar navigasi detail di frontend tidak 'undefined'.
      */
     public function index()
-{
-    $tenants = Tenant::where('is_active', true)
-        ->orderBy('route_order')
-        ->get()
-        ->map(function ($tenant) {
-
-            $lastChecklist = DB::table('checklists')
-                ->where('tenant_id', $tenant->id)
-                ->whereDate('check_date', today())
-                ->latest('id')
-                ->first();
-
-            if (!$lastChecklist) {
-                $tenant->status = 'pending';
-            } elseif ($lastChecklist->status === 'PROBLEM') {
-                $tenant->status = 'issue';
-            } else {
-                $tenant->status = 'done';
-            }
-
-            return $tenant;
-        });
-
-    return response()->json($tenants);
-}
+    {
+        $tenants = Tenant::where('is_active', true)->orderBy('route_order')->get();
+        return response()->json($tenants);
+    }
 
     /**
      * Display the specified tenant using route model binding.
